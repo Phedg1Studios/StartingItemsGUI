@@ -1,0 +1,10 @@
+{
+    "name": "StartingItemsGUI",
+    "version_number": "1.1.13",
+    "website_url": "",
+    "description": "This mod will allow players to use a GUI to select which items will be given to them at the start of a run. There are 3 modes: Free, Earnt Persistent and Earnt Consumable.",
+    "dependencies": [
+      "bbepis-BepInExPack-5.3.1",
+      "tristanmcpherson-R2API-2.5.6"
+    ]
+}

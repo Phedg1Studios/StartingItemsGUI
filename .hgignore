@@ -1,0 +1,11 @@
+syntax: glob
+
+.vs/
+obj/
+
+Build/**
+Dependencies/**
+
+*.png
+*.zip
+*.dll

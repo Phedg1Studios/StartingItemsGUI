@@ -1,0 +1,42 @@
+ManifestFileVersion: 0
+CRC: 1980946722
+Hashes:
+  AssetFileHash:
+    serializedVersion: 2
+    Hash: 0fca152612e4ed5d0487af2b5f34ef0a
+  TypeTreeHash:
+    serializedVersion: 2
+    Hash: 19f47b0257167941b8afbe41d3ae9e98
+HashAppended: 0
+ClassTypes:
+- Class: 21
+  Script: {instanceID: 0}
+- Class: 28
+  Script: {instanceID: 0}
+- Class: 48
+  Script: {instanceID: 0}
+- Class: 114
+  Script: {fileID: 11500000, guid: 71c1514a6bd24e1e882cebbe1904ce04, type: 3}
+- Class: 115
+  Script: {instanceID: 0}
+- Class: 213
+  Script: {instanceID: 0}
+Assets:
+- Assets/Images 2/texUIHighlightBoxOutlineThick.png
+- Assets/Images 2/texUIHighlightBoxOutlineThickIcon.png
+- Assets/Images 2/texUIOutlineOnly.png
+- Assets/Images/textier2bgicon.png
+- Assets/Images 2/texUIHandle.png
+- Assets/Images 2/texUIAnimateSliceNakedButtonCheat.png
+- Assets/Images/textier1bgicon.png
+- Assets/Images/texequipmentbgicon.png
+- Assets/Images 2/texUICleanButton.png
+- Assets/Images 2/texUIBottomUpFade.png
+- Assets/Images/texlunarbgicon.png
+- Assets/Images 2/texUIAnimateSliceNakedButton.png
+- Assets/Images 2/texUITopDownFade.png
+- Assets/Images/textier3bgicon.png
+- Assets/Fonts/BOMBARD_ SDF.asset
+- Assets/Images 2/texUIHighlightHeader.png
+- Assets/Images/texbossbgicon.png
+Dependencies: []
