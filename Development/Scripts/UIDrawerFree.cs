@@ -7,7 +7,7 @@ using RoR2;
 
 namespace Phedg1Studios {
     namespace StartingItemsGUI {
-        public class UiDrawerFree : MonoBehaviour {
+        public class UIDrawerFree : MonoBehaviour {
             static public void DrawUI() {
 
             }

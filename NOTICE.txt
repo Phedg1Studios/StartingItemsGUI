@@ -1,0 +1,6 @@
+Copyright 2020 Peter Hedges
+
+This product includes software developed by Phedg1 Studios.
+
+The graphical images in (assets) in Development/Resources/assets were created by Hopoo Games (https://hopoogames.com/).
+© 2012 - 2020 Hopoo Games, LLC. All Rights Reserved.

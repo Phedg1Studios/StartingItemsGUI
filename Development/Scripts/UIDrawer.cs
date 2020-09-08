@@ -27,7 +27,9 @@ namespace Phedg1Studios {
             static List<string> instructions = new List<string>() {
                 "LEFT CLICK to add - RIGHT CLICK to remove",
                 "LEFT CLICK to buy - RIGHT CLICK to refund\nDEFEAT BOSSES to earn credits",
-                "LEFT CLICK to buy - RIGHT CLICK to refund\nCLEAR STAGES to earn credits"
+                "LEFT CLICK to buy - RIGHT CLICK to refund\nCLEAR STAGES to earn credits",
+                "LEFT CLICK to buy - RIGHT CLICK to refund\nFINISH GAMES to earn credits",
+                "Items will be randomly assigned to you\nwhen you are deployed",
             };
 
             static public void DrawUI() {
@@ -46,7 +48,9 @@ namespace Phedg1Studios {
                 } else if (Data.mode == DataEarntPersistent.mode) {
                     UIDrawerEarntPersistent.DrawUI();
                 } else if (Data.mode == DataFree.mode) {
-                    UiDrawerFree.DrawUI();
+                    UIDrawerFree.DrawUI();
+                } else if (Data.mode == DataRandom.mode) {
+                    UIDrawerRandom.DrawUI();
                 }
                 Refresh();
             }
@@ -143,26 +147,49 @@ namespace Phedg1Studios {
                     }
                 }
 
-                for (int profileIndex = 0; profileIndex < Data.profileCount; profileIndex++) {
-                    profileImages.Add(new List<Image>());
-                    GameObject button = ButtonCreator.SpawnBlueButton(rootTransform.gameObject, new Vector2(1, 1), new Vector2(UIConfig.blueButtonWidth, UIConfig.blueButtonHeight), "Profile: " + profileIndex.ToString(), TMPro.TextAlignmentOptions.Center, profileImages[profileIndex]);
-                    button.GetComponent<RectTransform>().localPosition = new Vector3(rootTransform.rect.width -  UIConfig.offsetHorizontal - (UIConfig.blueButtonWidth + UIConfig.spacingHorizontal) * (Data.profileCount - 1 - profileIndex), -UIConfig.offsetVertical, 0);
-                    int profile = profileIndex;
-                    button.GetComponent<RoR2.UI.HGButton>().onClick.AddListener(() => {
-                        Data.SetProfile(profile);
-                    });
-                    shopInterfaces.Add(button);
+                if (Data.mode != DataRandom.mode) {
+                    for (int profileIndex = 0; profileIndex < Data.profileCount; profileIndex++) {
+                        profileImages.Add(new List<Image>());
+                        GameObject button = ButtonCreator.SpawnBlueButton(rootTransform.gameObject, new Vector2(1, 1), new Vector2(UIConfig.blueButtonWidth, UIConfig.blueButtonHeight), "Profile: " + profileIndex.ToString(), TMPro.TextAlignmentOptions.Center, profileImages[profileIndex]);
+                        button.GetComponent<RectTransform>().localPosition = new Vector3(rootTransform.rect.width - UIConfig.offsetHorizontal - (UIConfig.blueButtonWidth + UIConfig.spacingHorizontal) * (Data.profileCount - 1 - profileIndex), -UIConfig.offsetVertical, 0);
+                        int profile = profileIndex;
+                        button.GetComponent<RoR2.UI.HGButton>().onClick.AddListener(() => {
+                            Data.SetProfile(profile);
+                        });
+                        shopInterfaces.Add(button);
+                    }
                 }
             }
 
             static void DrawPoints() {
                 List<TMPro.TextMeshProUGUI> pointsText = new List<TMPro.TextMeshProUGUI>();
+                Vector2 pivot = new Vector2();
+                pivot.y = 1;
                 Vector3 position = new Vector3();
-                position.x = rootTransform.rect.width / 2f;
+                if (Data.mode != DataRandom.mode) {
+                    int modesDisabled = 0;
+                    foreach (bool modeEnabled in Data.modesEnabled) {
+                        if (!modeEnabled) {
+                            modesDisabled += 1;
+                        }
+                    }
+                    float offset = 0;
+                    if (modesDisabled <= 0) {
+                        offset = (Data.modeCount - Data.profileCount) * (UIConfig.blueButtonWidth + UIConfig.spacingHorizontal) * 0.5f;
+                    }
+                    position.x = rootTransform.rect.width / 2f + offset;
+                    pivot.x = 0.5f;
+                } else {
+                    position.x = rootTransform.rect.width - UIConfig.offsetHorizontal;
+                    pivot.x = 1;
+                }
                 position.y = -UIConfig.offsetVertical;
-                ElementCreator.SpawnTextSize(pointsText, rootTransform.gameObject, new Color(1, 1, 1, 1), 40, 0, new Vector2(0.5f, 1), new Vector2(400, UIConfig.blueButtonHeight), position);
+                ElementCreator.SpawnTextSize(pointsText, rootTransform.gameObject, new Color(1, 1, 1, 1), 40, 0, pivot, new Vector2(400, UIConfig.blueButtonHeight), position);
                 pointText = pointsText[0];
                 pointText.text = "Credits: 400¢";
+                if (Data.mode == DataRandom.mode) {
+                    pointText.alignment = TMPro.TextAlignmentOptions.Right;
+                }
                 shopInterfaces.Add(pointsText[0].gameObject);
             }
 
@@ -183,14 +210,16 @@ namespace Phedg1Studios {
                 });
                 shopInterfaces.Add(statusButton.transform.parent.gameObject);
 
-                List<TMPro.TextMeshProUGUI> multiplierTexts = new List<TMPro.TextMeshProUGUI>();
-                GameObject multiplierButton = ButtonCreator.SpawnBlackButton(rootTransform.gameObject, new Vector2(UIConfig.blackButtonWidth / 2f, UIConfig.blackButtonHeight), "X " + Data.buyMultiplier.ToString(), multiplierTexts);
-                multiplierButton.transform.parent.GetComponent<RectTransform>().localPosition = new Vector3(rootTransform.rect.width - UIConfig.offsetHorizontal - UIConfig.blackButtonWidth / 2f - UIConfig.blackButtons[Data.mode] * (UIConfig.spacingHorizontal + UIConfig.blackButtonWidth / 2f), -UIConfig.offsetVertical - UIConfig.blueButtonHeight - UIConfig.spacingVertical - storeHeight - UIConfig.spacingVertical, 0);
-                multiplierButton.GetComponent<RoR2.UI.HGButton>().onClick.AddListener(() => {
-                    Data.ToggleBuyMultiplier();
-                });
-                multiplierText = multiplierTexts[0];
-                shopInterfaces.Add(multiplierButton.transform.parent.gameObject);
+                if (Data.mode != DataRandom.mode) {
+                    List<TMPro.TextMeshProUGUI> multiplierTexts = new List<TMPro.TextMeshProUGUI>();
+                    GameObject multiplierButton = ButtonCreator.SpawnBlackButton(rootTransform.gameObject, new Vector2(UIConfig.blackButtonWidth / 2f, UIConfig.blackButtonHeight), "X " + Data.buyMultiplier.ToString(), multiplierTexts);
+                    multiplierButton.transform.parent.GetComponent<RectTransform>().localPosition = new Vector3(rootTransform.rect.width - UIConfig.offsetHorizontal - UIConfig.blackButtonWidth / 2f - UIConfig.blackButtons[Data.mode] * (UIConfig.spacingHorizontal + UIConfig.blackButtonWidth / 2f), -UIConfig.offsetVertical - UIConfig.blueButtonHeight - UIConfig.spacingVertical - storeHeight - UIConfig.spacingVertical, 0);
+                    multiplierButton.GetComponent<RoR2.UI.HGButton>().onClick.AddListener(() => {
+                        Data.ToggleBuyMultiplier();
+                    });
+                    multiplierText = multiplierTexts[0];
+                    shopInterfaces.Add(multiplierButton.transform.parent.gameObject);
+                }
 
                 if (UIConfig.blackButtons[Data.mode] > 0) {
                     GameObject infoButton = ButtonCreator.SpawnBlackButton(UIDrawer.rootTransform.gameObject, new Vector2(UIConfig.blackButtonWidth / 2f, UIConfig.blackButtonHeight), "?", new List<TMPro.TextMeshProUGUI>());
@@ -216,12 +245,16 @@ namespace Phedg1Studios {
             static void SetInstructionsText() {
                 if (Data.mode == DataFree.mode) {
                     instructionsText[0].text = instructions[0];
+                } else if (Data.mode == DataRandom.mode) {
+                    instructionsText[0].text = instructions[4];
                 } else {
-                    if (Data.earningMethod) {
+                    if (Data.earningMethod == 1) {
                         instructionsText[0].text = instructions[1];
-                    } else {
+                    } else if (Data.earningMethod == 0) {
                         instructionsText[0].text = instructions[2];
-                    }
+                    } else if (Data.earningMethod == 2) {
+                        instructionsText[0].text = instructions[3];
+                    } 
                 }
             }
 
@@ -237,6 +270,11 @@ namespace Phedg1Studios {
             }
 
             static void DrawShop() {
+                List<int> storeItems = GetStoreItems();
+                shopInterfaces.Add(ScrollCreator.CreateScroll(rootTransform, UIConfig.storeRows[Data.mode], UIConfig.textCount[Data.mode], storeItems, rootTransform.rect.width - UIConfig.offsetHorizontal * 2, new Vector3(UIConfig.offsetHorizontal, -UIConfig.offsetVertical - UIConfig.blueButtonHeight - UIConfig.spacingVertical, 0), itemImages, itemTexts));
+            }
+
+            static public List<int> GetStoreItems() {
                 List<int> storeItems = new List<int>();
                 foreach (ItemIndex itemIndex in RoR2.ItemCatalog.tier1ItemList) {
                     if (Data.UnlockedItem(Data.allItemsIndexes[itemIndex])) {
@@ -278,7 +316,7 @@ namespace Phedg1Studios {
                         storeItems.Add(Data.allEquipmentIndexes[equipmentIndex]);
                     }
                 }
-                shopInterfaces.Add(ScrollCreator.CreateScroll(rootTransform, UIConfig.storeRows[Data.mode], UIConfig.textCount[Data.mode], storeItems, rootTransform.rect.width - UIConfig.offsetHorizontal * 2, new Vector3(UIConfig.offsetHorizontal, -UIConfig.offsetVertical - UIConfig.blueButtonHeight - UIConfig.spacingVertical, 0), itemImages, itemTexts));
+                return storeItems;
             }
 
             static void DrawRecentPanel() {
@@ -349,6 +387,9 @@ namespace Phedg1Studios {
                 RectTransform panelTransform = panelOutline.GetComponent<RectTransform>();
                 float panelWidth = 700 + UIConfig.panelPadding * 2 + 10;
                 float panelHeight = 650 + UIConfig.panelPadding * 2 + 10;
+                if (Data.earningMethod == 2 || Data.mode == DataFree.mode) {
+                    panelHeight = 525 + UIConfig.panelPadding * 2 + 10;
+                }
                 panelTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, panelWidth);
                 panelTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, panelHeight);
                 panelTransform.localPosition = new Vector3(-panelWidth / 2f, panelHeight / 2f, 0);
@@ -356,23 +397,42 @@ namespace Phedg1Studios {
 
                 List<TMPro.TextMeshProUGUI> text = new List<TMPro.TextMeshProUGUI>();
                 ElementCreator.SpawnTextOffset(text, panelChildTransform.gameObject, new Color(1, 1, 1), 24, 0, new Vector2(UIConfig.spacingHorizontal, UIConfig.spacingVertical + UIConfig.blackButtonHeight + UIConfig.spacingVertical), new Vector2(-UIConfig.spacingHorizontal, -UIConfig.spacingVertical));
-                if (Data.earningMethod) {
+                if (Data.mode == DataFree.mode) {
+                    text[0].text = "UES EMPLOYMENT CONTRACT";
+                    text[0].text += "\nSUBSECTION 45b: REQUSITION";
+                    text[0].text += "\n";
+                    text[0].text += "\nUES always strives to ensure that all its employees are as equipped as necessary to complete their assigned duties. However, UES has finite resources and must determine in who’s hands those resources can be put to the best use. A thorough analysis of employee aptitude concluded that employees with a close familial relation on the Board of Directors (3b) are most able to use the resources of UES to their fullest capacity. To this end, any such employee is afforded the right to requisition any items or equipment they deem, in their own judgement, to be of a benefit in fulfilling their duties. UES will take aggressive legal action against any employee alleging bias or nepotism in regards to this matter. The employee agrees to waive their right to a lawyer (42a) should they be sued in regards to this matter.";
+                } else if (Data.mode == DataRandom.mode) {
+                    text[0].text = "UES EMPLOYMENT CONTRACT";
+                    text[0].text += "\nSUBSECTION 50a: EQUIPPING";
+                    text[0].text += "\n";
+                    text[0].text += "\nUES always strives to ensure that all its employees are as equipped as necessary to complete their assigned duties. However, UES has finite resources and must determine in who’s hands those resources can be put to the best use. To this end, a thorough analysis is conducted prior to any deployment to determine which, if any, equipment will give the employee the greatest chance of success. The employee agrees that this analysis its conclusions are infallible and that the manner in which the employee is equipped cannot be the basis for any suit against UES. UES will take aggressive legal action against any employee alleging that equipment is, instead, assigned arbitrarily. The employee agrees to waive their right to a lawyer (42a) should they be sued in regards to this matter.";
+                } else if(Data.earningMethod == 1) {
                     text[0].text = "UES EMPLOYMENT CONTRACT";
                     text[0].text += "\nSUBSECTION 18a: BOUNTIES";
                     text[0].text += "\n";
-                    if (Data.mode == 1) {
-                        text[0].text += "\nWhile deployed, UES employees should at all times endeavour to improve the relative safety of any environment they find themselves in. To this end, all employees are equipped a UES Threat Level Detection system which will quantify the threat of hostile organisms in the employee’s vicinity. If the organism is deemed to pose an imminent threat to UES operations, as part of our vertical integration policies (38b), the employee will be rewarded with supplemental UES Credits(10a) for eliminating the threat. Credits awarded is dependent upon the threat level of the organism. Credits can be exchanged for any items currently available in the UES Catalogue. Should the employee perish during deployment, a drone will be dispatched to recover any items that were in their possession. Any Credits owing will be accredited to the employee’s next of kin, should they also be an employee of UES, as well as any items they owned.";
-                    } else if (Data.mode == 0) {
-                        text[0].text += "\nWhile deployed, UES employees should at all times endeavour to improve the relative safety of any environment they find themselves in. To this end, all employees are equipped a UES Threat Level Detection system which will quantify the threat of hostile organisms in the employee’s vicinity. If the organism is deemed to pose an imminent threat to UES operations, as part of our vertical integration policies (38b), the employee will be rewarded with supplemental UES Credits(10a) for eliminating the threat. Credits awarded is dependent upon the threat level of the organism. Credits can be exchanged for any items currently available in the UES Catalogue. Any items in the possession of an employee returning from a deployment will be reclaimed for refurbishment, the employee will not be reimbursed. Should the employee perish during deployment, any Credits owing will be accredited to the employee’s next of kin, should they also be an employee of UES.";
+                    if (Data.mode == DataEarntPersistent.mode) {
+                        text[0].text += "\nWhile deployed, UES employees should at all times endeavour to improve the relative safety of any environment they find themselves in. To this end, all employees are equipped a UES Threat Level Detection system which will quantify the threat of hostile organisms in the employee’s vicinity. If the organism is deemed to pose an imminent threat to UES operations, as part of our vertical integration policies (38b), the employee will be rewarded with supplemental UES Credits (10a) for eliminating the threat. Credits awarded is dependent upon the threat level of the organism. Credits can be exchanged for any items currently available in the UES Catalogue. Should the employee perish during deployment (41a), a drone will be dispatched to recover any items that were in their possession. Any Credits owing will be accredited to the employee’s next of kin, should they also be an employee of UES, as well as any items they owned.";
+                    } else if (Data.mode == DataEarntConsumable.mode) {
+                        text[0].text += "\nWhile deployed, UES employees should at all times endeavour to improve the relative safety of any environment they find themselves in. To this end, all employees are equipped a UES Threat Level Detection system which will quantify the threat of hostile organisms in the employee’s vicinity. If the organism is deemed to pose an imminent threat to UES operations, as part of our vertical integration policies (38b), the employee will be rewarded with supplemental UES Credits (10a) for eliminating the threat. Credits awarded is dependent upon the threat level of the organism. Credits can be exchanged for the loan of any items currently available in the UES Catalogue. Any items in the possession of an employee returning from a deployment will be reclaimed for refurbishment, the employee will not be reimbursed. Should the employee perish during deployment (41a), any Credits owing will be accredited to the employee’s next of kin, should they also be an employee of UES.";
                     }
-                } else {
+                } else if (Data.earningMethod == 0) {
                     text[0].text = "UES EMPLOYMENT CONTRACT";
                     text[0].text += "\nSUBSECTION 23a: TELEPORTATION";
                     text[0].text += "\n";
-                    if (Data.mode == 1) {
-                        text[0].text += "\nThe employee agrees that primitive teleportation technology has no adverse, health related side effects and that any claims otherwise are unfounded. Should the employee be required to utilize primitive teleporters in the fulfilment of their duties while deployed, the employee agrees that UES is released from all responsibility and liability, and as part of our vertical integration policies (38b), will receive supplemental UES Credits(10a). Credits awarded is dependent upon the number of teleporter journeys the employee made during deployment and the effectiveness of the employee in carrying out the duties outlined in this contract. Credits can be exchanged for any items currently available in the UES Catalogue. Should the employee perish during deployment, a drone will be dispatched to recover any items that were in their possession. Any Credits owing will be accredited to the employee’s next of kin, should they also be an employee of UES, as well as any items they owned.";
-                    } else if (Data.mode == 0) {
-                        text[0].text += "\nThe employee agrees that primitive teleportation technology has no adverse, health related side effects and that any claims otherwise are unfounded. Should the employee be required to utilize primitive teleporters in the fulfilment of their duties while deployed, the employee agrees that UES is released from all responsibility and liability, and as part of our vertical integration policies (38b), will receive supplemental UES Credits(10a). Credits awarded is dependent upon the number of teleporter journeys the employee made during deployment and the effectiveness of the employee in carrying out the duties outlined in this contract. Credits can be exchanged for any items currently available in the UES Catalogue. Any items in the possession of an employee returning from a deployment will be reclaimed for refurbishment, the employee will not be reimbursed. Should the employee perish during deployment, any Credits owing will be accredited to the employee’s next of kin, should they also be an employee of UES.";
+                    if (Data.mode == DataEarntPersistent.mode) {
+                        text[0].text += "\nThe employee agrees that primitive teleportation technology has no adverse, health related side effects and that any claims otherwise are unfounded. Should the employee be required to utilize primitive teleporters in the fulfilment of their duties while deployed, the employee agrees that UES is released from all responsibility and liability, and as part of our vertical integration policies (38b), will receive supplemental UES Credits (10a). Credits awarded is dependent upon the number of teleporter journeys the employee made during deployment and the effectiveness of the employee in carrying out the duties outlined in this contract. Credits can be exchanged for any items currently available in the UES Catalogue. Should the employee perish during deployment (41a), a drone will be dispatched to recover any items that were in their possession. Any Credits owing will be accredited to the employee’s next of kin, should they also be an employee of UES, as well as any items they owned.";
+                    } else if (Data.mode == DataEarntConsumable.mode) {
+                        text[0].text += "\nThe employee agrees that primitive teleportation technology has no adverse, health related side effects and that any claims otherwise are unfounded. Should the employee be required to utilize primitive teleporters in the fulfilment of their duties while deployed, the employee agrees that UES is released from all responsibility and liability, and as part of our vertical integration policies (38b), will receive supplemental UES Credits (10a). Credits awarded is dependent upon the number of teleporter journeys the employee made during deployment and the effectiveness of the employee in carrying out the duties outlined in this contract. Credits can be exchanged for the loan of any items currently available in the UES Catalogue. Any items in the possession of an employee returning from a deployment will be reclaimed for refurbishment, the employee will not be reimbursed. Should the employee perish during deployment (41a), any Credits owing will be accredited to the employee’s next of kin, should they also be an employee of UES.";
+                    }
+                } else if (Data.earningMethod == 2) {
+                    text[0].text = "UES EMPLOYMENT CONTRACT";
+                    text[0].text += "\nSUBSECTION 14a: PERFORMANCE BONUSES";
+                    text[0].text += "\n";
+                    if (Data.mode == DataEarntPersistent.mode) {
+                        text[0].text += "\nIt is UES policy that the ends always justify the means (40d). To this end, as part of our vertical integration policies (38b), employees may earn an allotment of supplemental UES Credits (10a) when returning from deployment. Credits awarded is dependent upon the outcome of the deployment and is in no way impacted by the manner in which that outcome was achieved. Credits can be exchanged for any items currently available in the UES Catalogue. Should the employee perish during deployment (41a), a drone will be dispatched to recover any items that were in their possession. Any Credits owing will be accredited to the employee’s next of kin, should they also be an employee of UES, as well as any items they owned.";
+                    } else if (Data.mode == DataEarntConsumable.mode) {
+                        text[0].text += "\nIt is UES policy that the ends always justify the means (40d). To this end, as part of our vertical integration policies (38b), employees may earn an allotment of supplemental UES Credits (10a) when returning from deployment. Credits awarded is dependent upon the outcome of the deployment and is in no way impacted by the manner in which that outcome was achieved. Credits can be exchanged for the loan of any items currently available in the UES Catalogue. Any items in the possession of an employee returning from a deployment will be reclaimed for refurbishment, the employee will not be reimbursed. Should the employee perish during deployment (41a), any Credits owing will be accredited to the employee’s next of kin, should they also be an employee of UES.";
                     }
                 }
 
@@ -439,14 +499,18 @@ namespace Phedg1Studios {
                     statusTexts[0].text = "Disabled";
                 }
 
-                multiplierText.text = "X " + Data.buyMultiplier.ToString();
+                if (Data.mode != DataRandom.mode) {
+                    multiplierText.text = "X " + Data.buyMultiplier.ToString();
+                }
 
                 if (Data.mode == DataEarntConsumable.mode) {
                     UIDrawerEarntConsumable.Refresh();
                 } else if (Data.mode == DataEarntPersistent.mode) {
                     UIDrawerEarntPersistent.Refresh();
                 } else if (Data.mode == DataFree.mode) {
-                    UiDrawerFree.Refresh();
+                    UIDrawerFree.Refresh();
+                } else if (Data.mode == DataRandom.mode) {
+                    UIDrawerRandom.Refresh();
                 }
             }
 

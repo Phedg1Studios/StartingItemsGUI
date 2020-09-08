@@ -9,6 +9,7 @@ namespace Phedg1Studios {
     namespace StartingItemsGUI {
         public class DataEarntPersistent : MonoBehaviour {
             static public float defaultMultiplier;
+            static public float defaultResultMultiplier;
             static public float winMultiplier;
             static public float lossMutliplier;
             static public float obliterateMultiplier;
@@ -16,8 +17,10 @@ namespace Phedg1Studios {
             static public float easyMultiplier;
             static public float normalMultiplier;
             static public float hardMultiplier;
+            static public bool pastPlay;
 
             static public float defaultMultiplierDefault = 1;
+            static public float defaultResultMultiplierDefault = 4;
             static public float winMultiplierDefault = 2.5f;
             static public float lossMutliplierDefault = 1;
             static public float obliterateMultiplierDefault = 1.5f;
@@ -25,12 +28,14 @@ namespace Phedg1Studios {
             static public float easyMultiplierDefault = 1;
             static public float normalMultiplierDefault = 2;
             static public float hardMultiplierDefault = 4;
+            static public int userPointsLockedDefault = -1;
+            static public bool pastPlayDefault = false;
 
             static public int userPoints = -1;
             static public int userPointsBackup = -1;
             static public int userPointsRecent = 0;
             static public int userPointsLocked;
-            static public int userPointsLockedDefault = -1;
+            
             static public int userPointsEarnt = -1;
             static public List<Dictionary<int, int>> itemsPurchased = new List<Dictionary<int, int>>();
             static public int mode = 1;
@@ -58,7 +63,8 @@ namespace Phedg1Studios {
             static public List<string> userPointsRecentName = new List<string>() { "userPointsPersistentRecent" };
             static public List<string> itemsPurchasedName = new List<string>() { "itemsPurchasedPersistent" };
 
-            static public List<string> defaultMultiplierName = new List<string>() { "defaultMultiplierPersistent" };
+            static public List<string> defaultMultiplierName = new List<string>() { "defaultStagesMultiplier", "defaultMultiplierPersistent" };
+            static public List<string> defaultResultMultiplierName = new List<string>() { "defaultResultMultiplier" };
             static public List<string> winMultiplierName = new List<string>() { "winMultiplierPersistent" };
             static public List<string> lossMultiplierName = new List<string>() { "lossMultiplierPersistent" };
             static public List<string> obliterateMultiplierName = new List<string>() { "obliterationMultiplierPersistent" };
@@ -67,18 +73,19 @@ namespace Phedg1Studios {
             static public List<string> normalMultiplierName = new List<string>() { "hardMultiplierPersistent" };
             static public List<string> hardMultiplierName = new List<string>() { "itemsPurchasedPersistent" };
             static public List<string> pointsLockedName = new List<string>() { "earntPersistentCreditsLocked" };
+            static public List<string> pastPlayName = new List<string>() { "pastPlay" };
 
 
             //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
             //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-            
+
             static public void RefreshInfo(Dictionary<string, string> configGlobal, Dictionary<string, string> configProfile) {
                 GetUserPointsNegate();
                 GetUserStages();
                 GetConfig(configGlobal);
                 CalculatePoints();
-                userPointsEarnt = Data.GetUserPoints(configProfile, userPointsName, userPointsFile);
+                GetUserPoints(configProfile);
                 userPointsRecent = Data.GetUserPoints(configProfile, userPointsRecentName, "null");
                 CalculatePoints2();
                 userPoints = Data.GetItemsPurchased(configProfile, itemsPurchasedName, itemsPurchasedFile, itemsPurchased, userPoints, mode);
@@ -87,6 +94,7 @@ namespace Phedg1Studios {
 
             static void GetConfig(Dictionary<string, string> config) {
                 defaultMultiplier = Data.ParseFloat(defaultMultiplierDefault, Util.GetConfig(config, defaultMultiplierName));
+                defaultResultMultiplier = Data.ParseFloat(defaultResultMultiplierDefault, Util.GetConfig(config, defaultResultMultiplierName));
                 winMultiplier = Data.ParseFloat(winMultiplierDefault, Util.GetConfig(config, winMultiplierName));
                 lossMutliplier = Data.ParseFloat(lossMutliplierDefault, Util.GetConfig(config, lossMultiplierName));
                 obliterateMultiplier = Data.ParseFloat(obliterateMultiplierDefault, Util.GetConfig(config, obliterateMultiplierName));
@@ -95,6 +103,7 @@ namespace Phedg1Studios {
                 normalMultiplier = Data.ParseFloat(normalMultiplierDefault, Util.GetConfig(config, normalMultiplierName));
                 hardMultiplier = Data.ParseFloat(hardMultiplierDefault, Util.GetConfig(config, hardMultiplierName));
                 userPointsLocked = Data.ParseInt(userPointsLockedDefault, Util.GetConfig(config, pointsLockedName));
+                pastPlay = Data.ParseBool(pastPlayDefault, Util.GetConfig(config, pastPlayName));
             }
 
             static void GetUserPointsNegate() {
@@ -113,8 +122,8 @@ namespace Phedg1Studios {
             static void GetUserStages() {
                 totalStages = 0;
                 if (Data.userProfile != "") {
-                    ulong stagesCompletedValue = RoR2.UserProfile.GetProfile(Data.userProfile).statSheet.GetStatPointValue(RoR2.Stats.StatDef.totalStagesCompleted);
-                    totalStages = Mathf.FloorToInt(System.Convert.ToInt32(stagesCompletedValue) / 100f);
+                    int stagesCompleted = GetStat(RoR2.Stats.StatDef.totalStagesCompleted);
+                    totalStages = Mathf.FloorToInt(stagesCompleted);
                 }
 
                 string userStagesPath = BepInEx.Paths.BepInExRootPath + "/" + "config" + "/" + Data.modFolder + "/" + Data.userProfile + "/" + userStagesFile;
@@ -173,8 +182,27 @@ namespace Phedg1Studios {
                 string userPointsPath = BepInEx.Paths.BepInExRootPath + "/" + "config" + "/" + Data.modFolder + "/" + Data.userProfile + "/" + userPointsFile;
                 line = Util.MultilineToSingleLine(line, userPointsPath);
 
+                userPointsEarnt = 0;
                 if (!string.IsNullOrEmpty(line)) {
                     userPointsEarnt = Data.ParseInt(0, line);
+                } else if (pastPlay) {
+                    if (Data.earningMethod == 0) {
+                        int stagesCompleted = GetStat(RoR2.Stats.StatDef.totalStagesCompleted);
+                        userPointsEarnt = Mathf.FloorToInt(defaultMultiplier * Mathf.FloorToInt(stagesCompleted));
+                    } else if (Data.earningMethod == 1) {
+                        int lunarScavsKilled = 0;
+                        lunarScavsKilled += GetStat(RoR2.Stats.PerBodyStatDef.killsAgainst.FindStatDef("ScavLunar1Body"));
+                        lunarScavsKilled += GetStat(RoR2.Stats.PerBodyStatDef.killsAgainst.FindStatDef("ScavLunar2Body"));
+                        lunarScavsKilled += GetStat(RoR2.Stats.PerBodyStatDef.killsAgainst.FindStatDef("ScavLunar3Body"));
+                        lunarScavsKilled += GetStat(RoR2.Stats.PerBodyStatDef.killsAgainst.FindStatDef("ScavLunar4Body"));
+
+                        userPointsEarnt = lunarScavsKilled * Data.lunarScavPoints;
+                        int mithrixKilled = GetStat(RoR2.Stats.PerBodyStatDef.killsAgainst.FindStatDef("BrotherHurtBody"));
+                        userPointsEarnt += mithrixKilled * Data.mithrixPoints;
+                    } else if (Data.earningMethod == 2) {
+                        int gamesPlayed = GetStat(RoR2.Stats.StatDef.totalGamesPlayed);
+                        userPointsEarnt = Mathf.FloorToInt(gamesPlayed * defaultResultMultiplier);
+                    }
                 }
             }
 
@@ -256,24 +284,14 @@ namespace Phedg1Studios {
             }
 
             static float GetDifficultyMultiplier(Run run) {
-                float pointsMultiplier = 1;
-                float averageMultiplier = (easyMultiplier + normalMultiplier + hardMultiplier) / 3f;
-                if (run.selectedDifficulty < DifficultyIndex.Easy) {
-                    pointsMultiplier = Mathf.Max(0, easyMultiplier - Mathf.Abs(DifficultyIndex.Easy - run.selectedDifficulty) * averageMultiplier);
-                } else if (run.selectedDifficulty == DifficultyIndex.Easy) {
-                    pointsMultiplier = easyMultiplier;
-                } else if (run.selectedDifficulty == DifficultyIndex.Normal) {
-                    pointsMultiplier = normalMultiplier;
-                } else if (run.selectedDifficulty == DifficultyIndex.Hard) {
-                    pointsMultiplier = hardMultiplier;
-                } else if (run.selectedDifficulty > DifficultyIndex.Hard) {
-                    pointsMultiplier = Mathf.Max(0, hardMultiplier + Mathf.Abs(run.selectedDifficulty - DifficultyIndex.Hard) * averageMultiplier);
-                }
-                return pointsMultiplier;
+                List<float> functionValues = Util.GetDifficultyParabola(easyMultiplier, normalMultiplier, hardMultiplier);
+                float scalingValue = DifficultyCatalog.GetDifficultyDef(run.selectedDifficulty).scalingValue;
+                scalingValue += Data.GetEclipseScalingValueAdd(run);
+                return Mathf.Max(functionValues[4], Mathf.Min(functionValues[3], functionValues[0] * Mathf.Pow(scalingValue, 2) + functionValues[1] * scalingValue + functionValues[2]));
             }
 
             static public void UpdateUserPointsStages(Run run, RunReport runReport) {
-                if (!Data.earningMethod) {
+                if (Data.earningMethod == 0 || Data.earningMethod == 2) {
                     float pointsMultiplier = 1;
                     if (runReport.gameEnding.gameEndingIndex == RoR2Content.GameEndings.mainEnding.gameEndingIndex) {
                         pointsMultiplier = pointsMultiplier * winMultiplier;
@@ -285,17 +303,20 @@ namespace Phedg1Studios {
                         pointsMultiplier = pointsMultiplier * limboMultiplier;
                     }
                     pointsMultiplier = pointsMultiplier * GetDifficultyMultiplier(run);
+                    if (Data.earningMethod == 0) {
+                        pointsMultiplier = pointsMultiplier * run.stageClearCount;
+                    }
                     foreach (string userID in Data.localUsers) {
                         Data.RefreshInfo(userID);
-                        userPointsEarnt += Mathf.FloorToInt(pointsMultiplier * run.stageClearCount);
-                        userPointsRecent += Mathf.FloorToInt(pointsMultiplier * run.stageClearCount);
+                        userPointsEarnt += Mathf.FloorToInt(pointsMultiplier);
+                        userPointsRecent += Mathf.FloorToInt(pointsMultiplier);
                         Data.SaveConfigProfile();
                     }
                 }
             }
 
             static public void UpdateUserPointsBoss(string givenName) {
-                if (Data.earningMethod) {
+                if (Data.earningMethod == 1) {
                     if (givenName.Contains("ScavLunar") || givenName.Contains("BrotherHurt")) {
                         float creditsEarned = GetDifficultyMultiplier(Run.instance);
                         if (givenName.Contains("ScavLunar")) {
@@ -311,6 +332,17 @@ namespace Phedg1Studios {
                         }
                     }
                 }
+            }
+
+            static private int GetStat(RoR2.Stats.StatDef givenStatDef) {
+                UInt64 statValue = RoR2.UserProfile.GetProfile(Data.userProfile).statSheet.GetStatValueULong(givenStatDef);
+                int statValueAdjusted;
+                if (statValue <= System.Int32.MaxValue) {
+                    statValueAdjusted = System.Convert.ToInt32(statValue);
+                } else {
+                    statValueAdjusted = System.Int32.MaxValue;
+                }
+                return statValueAdjusted;
             }
         }
     }

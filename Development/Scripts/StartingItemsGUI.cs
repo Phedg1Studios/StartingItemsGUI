@@ -11,7 +11,7 @@ namespace Phedg1Studios {
         [R2API.Utils.R2APISubmoduleDependency("PrefabAPI")]
         [R2API.Utils.R2APISubmoduleDependency("ResourcesAPI")]
         [R2API.Utils.R2APISubmoduleDependency("NetworkingAPI")]
-        [BepInPlugin(PluginGUID, "StartingItemsGUI", "1.1.13")]
+        [BepInPlugin(PluginGUID, "StartingItemsGUI", "1.2.0")]
         
 
         public class StartingItemsGUI : BaseUnityPlugin {
@@ -21,7 +21,7 @@ namespace Phedg1Studios {
             List<Coroutine> characterMasterCoroutines = new List<Coroutine>();
 
             void OnceSetup() {
-                startingItemsGUI = this;
+                Data.UpdateConfigLocations();
                 gameObject.AddComponent<Util>();
                 Resources.LoadResources();
                 Data.PopulateItemCatalogues();
@@ -38,6 +38,7 @@ namespace Phedg1Studios {
             }
 
             void Start() {
+                startingItemsGUI = this;
                 OnceSetup();
                 On.RoR2.PreGameController.OnEnable += ((orig, preGameController) => {
                     Data.localUsers.Clear();

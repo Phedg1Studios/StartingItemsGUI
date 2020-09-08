@@ -21,21 +21,23 @@ namespace Phedg1Studios {
                 { 0, 5 },
                 { 1, 5 },
                 { 2, 6 },
+                { 3, 6 },
             };
             static public Dictionary<int, int> textCount = new Dictionary<int, int>() {
                 { 0, 2 },
                 { 1, 2 },
                 { 2, 1 },
+                { 3, 1 },
             };
             static public float profileWidth = 100;
             static public float profileHeight = 30;
             static public Color enabledColor = new Color(1, 1, 1, 1);
             static public Color disabledColor = new Color(0.4f, 0.4f, 0.4f, 1);
-            static public float blueButtonWidth = 200;
+            static public float blueButtonWidth = 175; //200
             static public float blueButtonHeight = 48f;
             static public float blackButtonWidth = 200;
             static public float blackButtonHeight = 48f;
-            static public List<int> blackButtons = new List<int>() { 1, 1, 0 };
+            static public List<int> blackButtons = new List<int>() { 1, 1, 1, 1 };
         }
     }
 }

@@ -29,6 +29,7 @@ namespace Phedg1Studios {
                 ElementCreator.SpawnTextOffset(buttonText, button, new Color(1, 1, 1, 1), 24, 0, new Vector2(12, 4), new Vector2(-12, -4));
                 buttonText[0].alignment = alignment;
                 buttonText[0].text = givenLabel;
+                buttonText[0].lineSpacing = -25;
                 return button;
             }
 

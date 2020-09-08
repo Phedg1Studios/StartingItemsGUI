@@ -87,6 +87,8 @@ namespace Phedg1Studios {
                         itemsPurchased = DataEarntPersistent.itemsPurchased[Data.profile[Data.mode]];
                     } else if (Data.mode == DataFree.mode) {
                         itemsPurchased = DataFree.itemsPurchased[Data.profile[Data.mode]];
+                    } else if (Data.mode == DataRandom.mode) {
+                        itemsPurchased = DataRandom.GenerateRandomItemList();
                     }
                     foreach (int itemID in itemsPurchased.Keys) {
                         ItemPurchased itemPurchased = new ItemPurchased { _itemID = itemID, _itemCount = itemsPurchased[itemID], _connectionID = networkUser.netId.Value };

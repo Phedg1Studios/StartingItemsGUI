@@ -18,14 +18,14 @@ namespace Phedg1Studios {
             static private List<RoR2.ItemIndex> badItems = new List<ItemIndex>() {
             };
 
-            static private int tier1Price;
-            static private int tier2Price;
-            static private int tier3Price;
-            static private int bossPrice;
-            static private int lunarPrice;
-            static private int equipmentPrice;
-            static private int lunarEquipmentPrice;
-            static private int eliteEquipmentPrice;
+            static public int tier1Price;
+            static public int tier2Price;
+            static public int tier3Price;
+            static public int bossPrice;
+            static public int lunarPrice;
+            static public int equipmentPrice;
+            static public int lunarEquipmentPrice;
+            static public int eliteEquipmentPrice;
 
             static public int lunarScavPoints;
             static public int mithrixPoints;
@@ -46,32 +46,33 @@ namespace Phedg1Studios {
             static public string developerName = "Phedg1 Studios";
             static public string modName = "Starting Items GUI";
             static public string modFolder;
-            static public string configFile = "Config.cfg";
-            static public string configProfileFile = ".txt";
             static private string profilesFile = "Profiles.txt";
 
 
             static public bool modEnabledDefault = true;
             static private bool showAllItemsDefault = false;
-            static public List<bool> modesEnabledDefault = new List<bool>() { true, true, true };
+            static public List<bool> modesEnabledDefault = new List<bool>() { true, true, true, true };
             static public int modeDefault = 0;
-            static public bool earningMethodDefault = true;
+            static public int earningMethodDefault = 1;
 
-            static public readonly int configVersion = 4;
+            static public readonly int configVersion = 5;
             static public int configFileVersion = -1;
             static public bool modEnabled;
             static private bool showAllItems;
             static public int mode;
-            static public List<bool> modesEnabled = new List<bool>() { true, true, true };
+            static public List<bool> modesEnabled = new List<bool>() { true, true, true, true };
             static public List<int> profile = new List<int>() { 0, 0, 0 };
             static public int profileCount = 3;
-            static public int modeCount = 3;
+            static public int modeCount = 4;
             static public List<string> modeNames = new List<string>() {
                 "Earnt Consumable",
                 "Earnt Persistent",
                 "Free",
+                "Random",
             };
-            static public bool earningMethod;
+            static public int earningMethod;
+            static public string configFile = ".cfg";
+            static public string profileConfigFile = ".txt";
             static public char profileChar = '/';
             static public char variableChar = '=';
             static public char splitChar = ',';
@@ -79,12 +80,18 @@ namespace Phedg1Studios {
             static private int forcedMode = -1;
             static public int buyMultiplier = 1;
             static public int buyMultiplierMax = 1000;
+            static private Dictionary<bool, int> boolConversion = new Dictionary<bool, int>() {
+                { false, 0 },
+                { true, 1 },
+            };
+            static public float eclipse8ScalingValue = 1.5f;
 
             static public List<string> configVersionName = new List<string>() { "configVersion" };
             static public List<string> enabledName = new List<string>() { "enabled" };
             static public List<string> earntConsumableName = new List<string>() { "earntConsumable" };
             static public List<string> earntPersistentName = new List<string>() { "earntPersistent" };
             static public List<string> freeName = new List<string>() { "freePersistent" };
+            static public List<string> randomName = new List<string>() { "random" };
             static public List<string> showAllName = new List<string>() { "showAllItems" };
             static public List<string> modeName = new List<string>() { "mode" };
             static public List<string> earningMethodName = new List<string>() { "earningMethod" };
@@ -98,6 +105,11 @@ namespace Phedg1Studios {
             static public List<string> tierEquipmentPriceName = new List<string>() { "equipmentPrice" };
             static public List<string> tierLunarEquipmentPriceName = new List<string>() { "lunarEquipmentPrice" };
             static public List<string> tierEliteEquipmentPriceName = new List<string>() { "eliteEquipmentPrice" };
+
+            static public List<string> configName = new List<string>();
+            static public List<string> configProfileName = new List<string>();
+
+            static private List<string> oldConfigFiles = new List<string>();
 
             static public List<string> profilesName = new List<string>() { "profiles" };
 
@@ -132,30 +144,52 @@ namespace Phedg1Studios {
             }
 
             static public void MakeDirectoryExist() {
-                if (!Directory.Exists(BepInEx.Paths.BepInExRootPath + "/" + "config" + "/" + modFolder)) {
-                    Directory.CreateDirectory(BepInEx.Paths.BepInExRootPath + "/" + "config" + "/" + modFolder);
+                if (!Directory.Exists(BepInEx.Paths.BepInExRootPath + "/" + "config" + "/" + modName)) {
+                    Directory.CreateDirectory(BepInEx.Paths.BepInExRootPath + "/" + "config" + "/" + modName);
                 }
             }
 
+            static public void UpdateConfigLocations() {
+                modFolder = developerName + "/" + modName;
+                configName.Add(BepInEx.Paths.BepInExRootPath + "/" + "config" + "/" + StartingItemsGUI.PluginGUID + configFile);
+                configName.Add(BepInEx.Paths.BepInExRootPath + "/" + "config" + "/" + developerName + "/" + modName + "/Config" + configFile);
+                configProfileName.Add(BepInEx.Paths.BepInExRootPath + "/" + "config" + "/" + modName + "/");
+                configProfileName.Add(BepInEx.Paths.BepInExRootPath + "/" + "config" + "/" + developerName + "/" + modName + "/");
+            }
 
             //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
             //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
             static public void RefreshInfo(string givenProfileID = "") {
-                modFolder = developerName + "/" + modName;
-                GetUserProfileID(givenProfileID);
+                oldConfigFiles.Clear();
                 MakeDirectoryExist();
-                Dictionary<string, string> configGlobal = ReadConfig(BepInEx.Paths.BepInExRootPath + "/" + "config" + "/" + modFolder + "/" + configFile);
+                GetUserProfileID(givenProfileID);
+                Dictionary<string, string> configGlobal = ReadConfig(configName);
                 GetConfig(configGlobal);
-                Dictionary<string, string> configProfile = ReadConfig(BepInEx.Paths.BepInExRootPath + "/" + "config" + "/" + modFolder + "/" + userProfile + configProfileFile);
+                CorrectMode();
+                Dictionary<string, string> configProfile = ReadConfig(configProfileName, userProfile + profileConfigFile);
                 GetProfiles(configProfile);
                 DataEarntConsumable.RefreshInfo(configGlobal, configProfile);
                 DataEarntPersistent.RefreshInfo(configGlobal, configProfile);
                 DataFree.RefreshInfo(configGlobal, configProfile);
-                CorrectConfig();
+                DataRandom.RefreshInfo(configGlobal, configProfile);
+                //CorrectConfig();
+                SaveConfig();
                 SaveConfigProfile();
                 DeleteOldConfig();
+                DeleteOldConfigLocations();
+            }
+
+            static private void DeleteOldConfigLocations() {
+                foreach (string file in oldConfigFiles) {
+                    string directory = System.IO.Path.GetDirectoryName(file);
+                    File.Delete(file);
+                    while (Directory.GetFiles(directory).Length + Directory.GetDirectories(directory).Length == 0) {
+                        Directory.Delete(directory);
+                        directory = Directory.GetParent(directory).FullName;
+                    }
+                }
             }
 
             static void DeleteOldConfig() {
@@ -180,31 +214,38 @@ namespace Phedg1Studios {
                 }
             }
 
-            static Dictionary<string, string> ReadConfig(string givenPath) {
+            static Dictionary<string, string> ReadConfig(List<string> givenPaths, string givenSuffix = "") {
                 Dictionary<string, string> config = new Dictionary<string, string>();
-                if (File.Exists(givenPath)) {
-                    List<string> lines = new List<string>();
-                    StreamReader reader = new StreamReader(givenPath);
-                    while (reader.Peek() >= 0) {
-                        lines.Add(reader.ReadLine());
-                    }
-                    reader.Close();
-                    foreach (string lineRaw in lines) {
-                        string line = lineRaw;
-                        if ((line.Length >= 4 && line.Substring(0, 4) == "### ")) {
-                            line = line.Substring(4, line.Length - 4);
+                foreach (string givenPath in givenPaths) {
+                    if (File.Exists(givenPath + givenSuffix)) {
+                        if (givenPath != givenPaths[0]) {
+                            oldConfigFiles.Add(givenPath + givenSuffix);
                         }
-                        if (!string.IsNullOrEmpty(line) && !new List<string>() { "#", " " }.Contains(line.Substring(0, 1))) {
-                            string[] splitLine = line.Split(variableChar);
-                            if (splitLine.Length == 2) {
-                                for (int splitIndex = 0; splitIndex < splitLine.Length; splitIndex++) {
-                                    splitLine[splitIndex] = splitLine[splitIndex].Replace(" ", "");
-                                }
-                                if (!config.ContainsKey(splitLine[0])) {
-                                    config.Add(splitLine[0], splitLine[1]);
+
+                        List<string> lines = new List<string>();
+                        StreamReader reader = new StreamReader(givenPath + givenSuffix);
+                        while (reader.Peek() >= 0) {
+                            lines.Add(reader.ReadLine());
+                        }
+                        reader.Close();
+                        foreach (string lineRaw in lines) {
+                            string line = lineRaw;
+                            if ((line.Length >= 4 && line.Substring(0, 4) == "### ")) {
+                                line = line.Substring(4, line.Length - 4);
+                            }
+                            if (!string.IsNullOrEmpty(line) && !new List<string>() { "#", " " }.Contains(line.Substring(0, 1))) {
+                                string[] splitLine = line.Split(variableChar);
+                                if (splitLine.Length == 2) {
+                                    for (int splitIndex = 0; splitIndex < splitLine.Length; splitIndex++) {
+                                        splitLine[splitIndex] = splitLine[splitIndex].Replace(" ", "");
+                                    }
+                                    if (!config.ContainsKey(splitLine[0])) {
+                                        config.Add(splitLine[0], splitLine[1]);
+                                    }
                                 }
                             }
                         }
+                        break;
                     }
                 }
                 return config;
@@ -216,13 +257,20 @@ namespace Phedg1Studios {
                 modesEnabled[0] = ParseBool(modesEnabledDefault[0], Util.GetConfig(config, earntConsumableName));
                 modesEnabled[1] = ParseBool(modesEnabledDefault[1], Util.GetConfig(config, earntPersistentName));
                 modesEnabled[2] = ParseBool(modesEnabledDefault[2], Util.GetConfig(config, freeName));
+                modesEnabled[3] = ParseBool(modesEnabledDefault[3], Util.GetConfig(config, randomName));
                 showAllItems = ParseBool(showAllItemsDefault, Util.GetConfig(config, showAllName));
                 if (forcedMode == -1) {
                     mode = Mathf.Max(0, Mathf.Min(ParseInt(0, Util.GetConfig(config, modeName)), modeCount - 1));
                 } else {
                     mode = forcedMode;
                 }
-                earningMethod = ParseBool(earningMethodDefault, Util.GetConfig(config, earningMethodName));
+                bool result;
+                if (Boolean.TryParse(Util.GetConfig(config, earningMethodName), out result)) {
+                    earningMethod = boolConversion[result];
+                } else {
+                    earningMethod = ParseInt(earningMethodDefault, Util.GetConfig(config, earningMethodName));
+                }
+
                 lunarScavPoints = ParseInt(lunarScavPointsDefault, Util.GetConfig(config, lunarScavCreditsName));
                 mithrixPoints = ParseInt(mithrixPointsDefault, Util.GetConfig(config, mithrixCreditsName));
                 tier1Price = ParseInt(tier1PriceDefault, Util.GetConfig(config, tier1PriceName));
@@ -235,7 +283,7 @@ namespace Phedg1Studios {
                 eliteEquipmentPrice = ParseInt(eliteEquipmentPriceDefault, Util.GetConfig(config, tierEliteEquipmentPriceName));
             }
 
-            static void CorrectConfig() {
+            static void CorrectMode() {
                 int firstEnabledMode = -1;
                 for (int modeIndex = 0; modeIndex < modesEnabled.Count; modeIndex++) {
                     if (modesEnabled[modesEnabled.Count - 1 - modeIndex]) {
@@ -248,8 +296,11 @@ namespace Phedg1Studios {
                     }
                 } else if (!modesEnabled[mode]) {
                     mode = firstEnabledMode;
-                    SaveConfig();
                 }
+            }
+
+            static void CorrectConfig() {
+
                 if (configFileVersion != configVersion || forcedMode != -1) {
                     SaveConfig();
                 }
@@ -458,6 +509,8 @@ namespace Phedg1Studios {
                     DataEarntPersistent.BuyItem(itemID);
                 } else if (mode == DataFree.mode) {
                     DataFree.BuyItem(itemID);
+                } else if (mode == DataRandom.mode) {
+                    DataRandom.BuyItem(itemID);
                 }
             }
 
@@ -468,6 +521,8 @@ namespace Phedg1Studios {
                     DataEarntPersistent.SellItem(itemID);
                 } else if (mode == DataFree.mode) {
                     DataFree.SellItem(itemID);
+                } else if (mode == DataRandom.mode) {
+                    DataRandom.SellItem(itemID);
                 }
             }
 
@@ -569,7 +624,7 @@ namespace Phedg1Studios {
             }
 
             static void ChangeMenu(int oldMode, int newMode) {
-                if (UIConfig.storeRows[oldMode] == UIConfig.storeRows[newMode] && UIConfig.textCount[oldMode] == UIConfig.textCount[newMode]) {
+                if (UIConfig.storeRows[oldMode] == UIConfig.storeRows[newMode] && UIConfig.textCount[oldMode] == UIConfig.textCount[newMode] && oldMode != DataRandom.mode && newMode != DataRandom.mode) {
                     UIDrawer.Refresh();
                 } else {
                     UIDrawer.DrawUI();
@@ -579,7 +634,7 @@ namespace Phedg1Studios {
             static void SaveConfig() {
                 string spacing = " ";
                 string variableCharUpdate = spacing + variableChar + spacing;
-                string configPath = BepInEx.Paths.BepInExRootPath + "/" + "config" + "/" + modFolder + "/" + configFile;
+                string configPath = configName[0];
                 StreamWriter writer = new StreamWriter(configPath, false);
                 string configString = "";
                 configString += "### " + configVersionName[0] + " = " + configVersion.ToString();
@@ -587,10 +642,11 @@ namespace Phedg1Studios {
                 configString += "\n\n# Enable/disable the StartingItemsGUI mod\n#\n# Setting type: Boolean\n# Default value: " + modEnabledDefault.ToString() + "\n" + enabledName[0] + variableCharUpdate + modEnabled.ToString().ToLower();
                 configString += "\n\n# Enable/disable the EarntConsumable mode\n#\n# Setting type: Boolean\n# Default value: " + modesEnabledDefault[DataEarntConsumable.mode].ToString() + "\n" + earntConsumableName[0] + variableCharUpdate + modesEnabled[0].ToString();
                 configString += "\n\n# Enable/disable the EarntPersistent mode\n#\n# Setting type: Boolean\n# Default value: " + modesEnabledDefault[DataEarntPersistent.mode].ToString() + "\n" + earntPersistentName[0] + variableCharUpdate + modesEnabled[1].ToString();
-                configString += "\n\n# Enable/disable the FreePersistentmode\n#\n# Setting type: Boolean\n# Default value: " + modesEnabledDefault[DataFree.mode].ToString() + "\n" + freeName[0] + variableCharUpdate + modesEnabled[2].ToString();
+                configString += "\n\n# Enable/disable the FreePersistent mode\n#\n# Setting type: Boolean\n# Default value: " + modesEnabledDefault[DataFree.mode].ToString() + "\n" + freeName[0] + variableCharUpdate + modesEnabled[2].ToString();
+                configString += "\n\n# Enable/disable the Random mode\n#\n# Setting type: Boolean\n# Default value: " + modesEnabledDefault[DataRandom.mode].ToString() + "\n" + randomName[0] + variableCharUpdate + modesEnabled[3].ToString();
                 configString += "\n\n# Enable/disable showing all items mod\n# When enabled all items and equipment will be listed, even those which the player has not unlocked and discovered\n#\n# Setting type: Boolean\n# Default value: " + showAllItemsDefault.ToString() + "\n" + showAllName[0] + variableCharUpdate + showAllItems.ToString().ToLower();
                 configString += "\n\n# The mode currently in use\n# 0 is EarntConsumable, 1 is EarntPersistent and 2 is FreePersistent\n#\n# Setting type: Integer\n# Default value: " + modeDefault.ToString() + "\n" + modeName[0] + variableCharUpdate + mode.ToString();
-                configString += "\n\n# Whether credits are earnt by killing endgame bosses (Lunar Scav only currently) or by clearing stages\n# True is bosses and False is stages\n#\n# Setting type: Boolean\n# Default value: " + earningMethodDefault.ToString() + "\n" + earningMethodName[0] + variableCharUpdate + earningMethod.ToString();
+                configString += "\n\n# Whether credits are earnt by killing endgame bosses (Lunar Scav & Mithrix), by clearing stages or by how games end\n# 0 is stages, 1 is bosses and 2 is ending\n#\n# Setting type: Integer\n# Default value: " + earningMethodDefault.ToString() + "\n" + earningMethodName[0] + variableCharUpdate + earningMethod.ToString();
                 configString += "\n\n[Prices]";
                 configString += "\n\n# How many credits are awarded for killing a Lunar Scav\n#\n# Settings type: Integer\n# Default value: " + lunarScavPointsDefault.ToString() + "\n" + lunarScavCreditsName[0] + variableCharUpdate + lunarScavPoints.ToString();
                 configString += "\n\n# How many credits are awarded for killing a Mithrix\n#\n# Settings type: Integer\n# Default value: " + mithrixPointsDefault.ToString() + "\n" + mithrixCreditsName[0] + variableCharUpdate + mithrixPoints.ToString();
@@ -611,7 +667,9 @@ namespace Phedg1Studios {
                 configString += "\n\n# The multiplier for how many EarntConsumable credits to award on normal\n#\n# Setting type: Float\n# Default value: " + DataEarntConsumable.normalMultiplierDefault.ToString() + "\n" + DataEarntConsumable.normalMultiplierName[0] + variableCharUpdate + DataEarntConsumable.normalMultiplier.ToString();
                 configString += "\n\n# The multiplier for how many EarntConsumable credits to award on hard\n#\n# Setting type: Float\n# Default value: " + DataEarntConsumable.hardMultiplierDefault.ToString() + "\n" + DataEarntConsumable.hardMultiplierName[0] + variableCharUpdate + DataEarntConsumable.hardMultiplier.ToString();
                 configString += "\n\n[Credit Multipliers EarntPersistent]";
-                configString += "\n\n# The multiplier for how many EarntPersistent credits to award for previously completed stages\n# Setting type: Float\n# Default value: " + DataEarntPersistent.defaultMultiplierDefault.ToString() + "\n" + DataEarntPersistent.defaultMultiplierName[0] + variableCharUpdate + DataEarntPersistent.defaultMultiplier.ToString();
+                configString += "\n\n# Whether users should be awarded credits for previously play\n#\n# Setting type: Boolean\n# Default value: " + DataEarntPersistent.pastPlayDefault.ToString() + "\n" + DataEarntPersistent.pastPlayName[0] + variableCharUpdate + DataEarntPersistent.pastPlay.ToString();
+                configString += "\n\n# The multiplier for how many EarntPersistent credits to award for previously completed stages\n#\n# Setting type: Float\n# Default value: " + DataEarntPersistent.defaultMultiplierDefault.ToString() + "\n" + DataEarntPersistent.defaultMultiplierName[0] + variableCharUpdate + DataEarntPersistent.defaultMultiplier.ToString();
+                configString += "\n\n# The multiplier for how many EarntPersistent credits to award for previously games\n#\n# Setting type: Float\n# Default value: " + DataEarntPersistent.defaultResultMultiplierDefault.ToString() + "\n" + DataEarntPersistent.defaultResultMultiplierName[0] + variableCharUpdate + DataEarntPersistent.defaultResultMultiplier.ToString();
                 configString += "\n\n# The multiplier for how many EarntPersistent credits to award for a win\n#\n# Setting type: Float\n# Default value: " + DataEarntPersistent.winMultiplierDefault.ToString() + "\n" + DataEarntPersistent.winMultiplierName[0] + variableCharUpdate + DataEarntPersistent.winMultiplier.ToString();
                 configString += "\n\n# The multiplier for how many EarntPersistent credits to award for a loss\n#\n# Setting type: Float\n# Default value: " + DataEarntPersistent.lossMutliplierDefault.ToString() + "\n" + DataEarntPersistent.lossMultiplierName[0] + variableCharUpdate + DataEarntPersistent.lossMutliplier.ToString();
                 configString += "\n\n# The multiplier for how many EarntPersistent credits to award for an obliteration\n#\n# Setting type: Float\n# Default value: " + DataEarntPersistent.obliterateMultiplierDefault.ToString() + "\n" + DataEarntPersistent.obliterateMultiplierName[0] + variableCharUpdate + DataEarntPersistent.obliterateMultiplier.ToString();
@@ -620,6 +678,9 @@ namespace Phedg1Studios {
                 configString += "\n\n# The multiplier for how many EarntPersistent credits to award on normal\n#\n# Setting type: Float\n# Default value: " + DataEarntPersistent.normalMultiplierDefault.ToString() + "\n" + DataEarntPersistent.normalMultiplierName[0] + variableCharUpdate + DataEarntPersistent.normalMultiplier.ToString();
                 configString += "\n\n# The multiplier for how many EarntPersistent credits to award on hard\n#\n# Setting type: Float\n# Default value: " + DataEarntPersistent.hardMultiplierDefault.ToString() + "\n" + DataEarntPersistent.hardMultiplierName[0] + variableCharUpdate + DataEarntPersistent.hardMultiplier.ToString();
                 configString += "\n\n# The amount of EarntPersistent credits available\n# The amount of EarntPersistent credits available will not grow as the player plays, it will stay locked to this amount\n# The amount of EarntPersistent credits a player has earned will continue to grow behind the scenes\n# If this value is smaller than 0 the EarntPersistent credits will function normally\n#\n# Setting type: Integer\n# Default value: " + DataEarntPersistent.userPointsLockedDefault.ToString() + "\n" + DataEarntPersistent.pointsLockedName[0] + variableCharUpdate + DataEarntPersistent.userPointsLocked.ToString();
+                configString += "\n\n[Random]";
+                configString += "\n\n# The way in which credits are allocated for the Random mode\n# 0 is to use " + DataRandom.pointsLockedName[0] + ", 1 is to use the credits from EarntPersistent mode\n#\n# Setting type: Integer\n# Default value: " + DataRandom.pointsMethodDefault.ToString() + "\n" + DataRandom.pointsMethodName[0] + variableCharUpdate + DataRandom.pointsMethod.ToString();
+                configString += "\n\n# The credits allocated to Random mode\n#\n# Setting type: Integer\n# Default value: " + DataRandom.pointsLockedDefault.ToString() + "\n" + DataRandom.pointsLockedName[0] + variableCharUpdate + DataRandom.pointsLocked.ToString();
                 writer.Write(configString);
                 writer.Close();
             }
@@ -627,7 +688,7 @@ namespace Phedg1Studios {
             static public void SaveConfigProfile() {
                 string spacing = " ";
                 string variableCharUpdate = spacing + variableChar + spacing;
-                string configPath = BepInEx.Paths.BepInExRootPath + "/" + "config" + "/" + modFolder + "/" + userProfile + configProfileFile;
+                string configPath = configProfileName[0] + userProfile + profileConfigFile;
                 StreamWriter writer = new StreamWriter(configPath, false);
                 string configString = "";
                 configString += profilesName[0] + variableCharUpdate + Util.ListToString(profile);
@@ -640,6 +701,16 @@ namespace Phedg1Studios {
                 configString += "\n" + DataFree.itemsPurchasedName[0] + variableCharUpdate + Util.DictToString(DataFree.itemsPurchased);
                 writer.Write(configString);
                 writer.Close();
+            }
+
+            static public float GetEclipseScalingValueAdd(Run run) {
+                int eclipse = 0;
+                if (run.selectedDifficulty.ToString().ToLower().Contains("eclipse")) {
+                    string eclipseString = run.selectedDifficulty.ToString();
+                    eclipseString = eclipseString.Substring(7, eclipseString.Length - 7);
+                    int.TryParse(eclipseString, out eclipse);
+                }
+                return eclipse / 8f * eclipse8ScalingValue;
             }
         }
     }

@@ -53,7 +53,6 @@ namespace Phedg1Studios {
             
             static public void RefreshInfo(Dictionary<string, string> configGlobal, Dictionary<string, string> configProfile) {
                 GetConfig(configGlobal);
-                GetUserPoints(configProfile);
                 userPointsBackup = Data.GetUserPoints(configProfile, userPointsName, userPointsFile);
                 userPoints = userPointsBackup;
                 userPointsRecent = Data.GetUserPoints(configProfile, userPointsRecentName, "null");
@@ -69,16 +68,6 @@ namespace Phedg1Studios {
                 easyMultiplier = Data.ParseFloat(easyMultiplierDefault, Util.GetConfig(config, easyMultiplierName));
                 normalMultiplier = Data.ParseFloat(normalMultiplierDefault, Util.GetConfig(config, normalMultiplierName));
                 hardMultiplier = Data.ParseFloat(hardMultiplierDefault, Util.GetConfig(config, hardMultiplierName));
-            }
-
-            static void GetUserPoints(Dictionary<string, string> config) {
-                string line = Util.GetConfig(config, userPointsName);
-                string userPointsPath = BepInEx.Paths.BepInExRootPath + "/" + "config" + "/" + Data.modFolder + "/" + Data.userProfile + "/" + userPointsFile;
-                line = Util.MultilineToSingleLine(line, userPointsPath);
-                if (!string.IsNullOrEmpty(line)) {
-                    userPointsBackup = Data.ParseInt(0, line);
-                }
-                userPoints = userPointsBackup;
             }
 
             static public void VerifyItemsPurchased() {
@@ -155,24 +144,14 @@ namespace Phedg1Studios {
 
 
             static float GetDifficultyMultiplier(Run run) {
-                float pointsMultiplier = 1;
-                float averageMultiplier = (easyMultiplier + normalMultiplier + hardMultiplier) / 3f;
-                if (run.selectedDifficulty < DifficultyIndex.Easy) {
-                    pointsMultiplier = Mathf.Max(0, easyMultiplier - Mathf.Abs(DifficultyIndex.Easy - run.selectedDifficulty) * averageMultiplier);
-                } else if (run.selectedDifficulty == DifficultyIndex.Easy) {
-                    pointsMultiplier = easyMultiplier;
-                } else if (run.selectedDifficulty == DifficultyIndex.Normal) {
-                    pointsMultiplier = normalMultiplier;
-                } else if (run.selectedDifficulty == DifficultyIndex.Hard) {
-                    pointsMultiplier = hardMultiplier;
-                } else if (run.selectedDifficulty > DifficultyIndex.Hard) {
-                    pointsMultiplier = Mathf.Max(0, hardMultiplier + Mathf.Abs(run.selectedDifficulty - DifficultyIndex.Hard) * averageMultiplier);
-                }
-                return pointsMultiplier;
+                List<float> functionValues = Util.GetDifficultyParabola(easyMultiplier, normalMultiplier, hardMultiplier);
+                float scalingValue = DifficultyCatalog.GetDifficultyDef(run.selectedDifficulty).scalingValue;
+                scalingValue += Data.GetEclipseScalingValueAdd(run);
+                return Mathf.Max(functionValues[4], Mathf.Min(functionValues[3], functionValues[0] * Mathf.Pow(scalingValue, 2) + functionValues[1] * scalingValue + functionValues[2]));
             }
 
             static public void UpdateUserPointsStages(Run run, RunReport runReport) {
-                if (!Data.earningMethod) {
+                if (Data.earningMethod == 0 || Data.earningMethod == 2) {
                     float pointsMultiplier = 1;
                     if (runReport.gameEnding.gameEndingIndex == RoR2.RoR2Content.GameEndings.mainEnding.gameEndingIndex) {
                         pointsMultiplier = pointsMultiplier * winMultiplier;
@@ -184,18 +163,20 @@ namespace Phedg1Studios {
                         pointsMultiplier = pointsMultiplier * limboMultiplier;
                     }
                     pointsMultiplier = pointsMultiplier * GetDifficultyMultiplier(run);
+                    if (Data.earningMethod == 0) {
+                        pointsMultiplier = pointsMultiplier * run.stageClearCount;
+                    }
                     foreach (string userID in Data.localUsers) {
                         Data.RefreshInfo(userID);
-                        userPointsBackup += Mathf.FloorToInt(pointsMultiplier * run.stageClearCount);
-                        userPointsRecent += Mathf.FloorToInt(pointsMultiplier * run.stageClearCount);
-                        print(pointsMultiplier * run.stageClearCount);
+                        userPointsBackup += Mathf.FloorToInt(pointsMultiplier);
+                        userPointsRecent += Mathf.FloorToInt(pointsMultiplier);
                         Data.SaveConfigProfile();
                     }
                 }
             }
 
             static public void UpdateUserPointsBoss(string givenName) {
-                if (Data.earningMethod) {
+                if (Data.earningMethod == 1) {
                     if (givenName.Contains("ScavLunar") || givenName.Contains("BrotherHurt")) {
                         float creditsEarned = GetDifficultyMultiplier(Run.instance);
                         if (givenName.Contains("ScavLunar")) {
