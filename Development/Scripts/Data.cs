@@ -434,13 +434,13 @@ namespace Phedg1Studios {
                         return true;
                     }
                     if (allItemIDs.ContainsKey(itemID)) {
-                        if (RoR2.UserProfile.GetProfile(userProfile).HasUnlockable(RoR2.ItemCatalog.GetItemDef(allItemIDs[itemID]).unlockableName)) {
+                        if (RoR2.UserProfile.GetProfile(userProfile).HasUnlockable(RoR2.ItemCatalog.GetItemDef(allItemIDs[itemID]).unlockableDef)) {
                             if (RoR2.UserProfile.GetProfile(userProfile).HasDiscoveredPickup(new PickupIndex(allItemIDs[itemID]))) {
                                 return true;
                             }
                         }
                     } else if (allEquipmentIDs.ContainsKey(itemID)) {
-                        if (RoR2.UserProfile.GetProfile(userProfile).HasUnlockable(RoR2.EquipmentCatalog.GetEquipmentDef(allEquipmentIDs[itemID]).unlockableName)) {
+                        if (RoR2.UserProfile.GetProfile(userProfile).HasUnlockable(RoR2.EquipmentCatalog.GetEquipmentDef(allEquipmentIDs[itemID]).unlockableDef)) {
                             if (RoR2.UserProfile.GetProfile(userProfile).HasDiscoveredPickup(new PickupIndex(allEquipmentIDs[itemID]))) {
                                 return true;
                             }
