@@ -51,13 +51,10 @@ namespace Phedg1Studios {
 
 
             static public void LoadResources() {
-                string pluginfolder = System.IO.Path.GetDirectoryName(typeof(Resources).Assembly.Location);
+                var pluginFolder = System.IO.Path.GetDirectoryName(typeof(Resources).Assembly.Location);
 
-                System.IO.Stream stream = System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream(modName + "." + assetBundleLocation);
-                AssetBundle bundle = AssetBundle.LoadFromStream(stream);
-                R2API.AssetBundleResourcesProvider provider = new R2API.AssetBundleResourcesProvider(assetPrefix, bundle);
-                R2API.ResourcesAPI.AddProvider(provider);
-
+                AssetBundle bundle = AssetBundle.LoadFromFile(System.IO.Path.Combine(pluginFolder, assetBundleLocation));
+                
                 foreach (string tierTextureName in tierTextureNames) {
                     tierTextures.Add(bundle.LoadAsset<Sprite>(tierTextureName));
                 }

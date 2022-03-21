@@ -200,16 +200,18 @@ namespace Phedg1Studios {
             }
 
             static void GetUserProfileID(string givenProfileID = "") {
-                if (givenProfileID == "") {
-                    List<string> profileIDs = RoR2.UserProfile.GetAvailableProfileNames();
-                    foreach (string userID in profileIDs) {
-                        if (RoR2.UserProfile.GetProfile(userID) != null) {
-                            if (RoR2.UserProfile.GetProfile(userID).loggedIn) {
-                                userProfile = userID;
-                            }
+                if (givenProfileID.Trim().Length == 0)
+                {
+                    var profileIDs = PlatformSystems.saveSystem.GetAvailableProfileNames();
+                    foreach (var profileID in profileIDs)
+                    {
+                        if (PlatformSystems.saveSystem.GetProfile(profileID) != null && PlatformSystems.saveSystem.GetProfile(profileID).loggedIn)
+                        {
+                            userProfile = profileID;
                         }
                     }
-                } else {
+                }
+                else {
                     userProfile = givenProfileID;
                 }
             }
@@ -411,13 +413,20 @@ namespace Phedg1Studios {
             //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
-            static public bool ItemExists(int itemID) {
-                if (allItemIDs.ContainsKey(itemID)) {
-                    if (RoR2.ItemCatalog.GetItemDef(allItemIDs[itemID]).pickupIconSprite != null && RoR2.ItemCatalog.GetItemDef(allItemIDs[itemID]).pickupIconSprite.name != "texNullIcon") {
-                        if (RoR2.ItemCatalog.GetItemDef(allItemIDs[itemID]).tier != ItemTier.NoTier) {
-                            if (!badItems.Contains(allItemIDs[itemID])) {
-                                return true;
-                            }
+            static public bool ItemExists(int itemID)
+            {
+                if (allItemIDs.ContainsKey(itemID))
+                {
+                    if (badItems.Contains(allItemIDs[itemID]))
+                    {
+                        return false;
+                    }
+
+                    if (RoR2.ItemCatalog.GetItemDef(allItemIDs[itemID]).pickupIconSprite != null && RoR2.ItemCatalog.GetItemDef(allItemIDs[itemID]).pickupIconSprite.name != "texNullIcon")
+                    {
+                        if (RoR2.ItemCatalog.GetItemDef(allItemIDs[itemID]).tier != ItemTier.NoTier)
+                        {
+                            return true;
                         }
                     }
                 } else if (allEquipmentIDs.ContainsKey(itemID)) {
@@ -428,24 +437,33 @@ namespace Phedg1Studios {
                 return false;
             }
 
-            static public bool UnlockedItem(int itemID) {
-                if (ItemExists(itemID)) {
-                    if (showAllItems) {
-                        return true;
-                    }
-                    if (allItemIDs.ContainsKey(itemID)) {
-                        if (RoR2.UserProfile.GetProfile(userProfile).HasUnlockable(RoR2.ItemCatalog.GetItemDef(allItemIDs[itemID]).unlockableName)) {
-                            if (RoR2.UserProfile.GetProfile(userProfile).HasDiscoveredPickup(new PickupIndex(allItemIDs[itemID]))) {
-                                return true;
-                            }
-                        }
-                    } else if (allEquipmentIDs.ContainsKey(itemID)) {
-                        if (RoR2.UserProfile.GetProfile(userProfile).HasUnlockable(RoR2.EquipmentCatalog.GetEquipmentDef(allEquipmentIDs[itemID]).unlockableName)) {
-                            if (RoR2.UserProfile.GetProfile(userProfile).HasDiscoveredPickup(new PickupIndex(allEquipmentIDs[itemID]))) {
-                                return true;
-                            }
-                        }
-                    }
+            static public bool UnlockedItem(int itemID)
+            {
+                if (!ItemExists(itemID))
+                {
+                    print($"Item with ID {itemID} doesn't exist.");
+                    return false;
+                }
+
+                if (showAllItems)
+                {
+                    return true;
+                }
+
+                var user = RoR2.UserProfile.defaultProfile;
+
+                if (allItemIDs.ContainsKey(itemID))
+                {
+                    var unlockableDef = RoR2.ItemCatalog.GetItemDef(allItemIDs[itemID]).unlockableDef;
+                    var pickup = RoR2.ItemCatalog.GetItemDef(allItemIDs[itemID]).CreatePickupDef().pickupIndex;
+                    return user.HasUnlockable(unlockableDef) && user.HasDiscoveredPickup(pickup);
+
+                }
+                else if (allEquipmentIDs.ContainsKey(itemID))
+                {
+                    var unlockableDef = RoR2.EquipmentCatalog.GetEquipmentDef(allEquipmentIDs[itemID]).unlockableDef;
+                    var pickup = RoR2.EquipmentCatalog.GetEquipmentDef(allEquipmentIDs[itemID]).CreatePickupDef().pickupIndex;
+                    return user.HasUnlockable(unlockableDef) && user.HasDiscoveredPickup(pickup);
                 }
                 return false;
             }

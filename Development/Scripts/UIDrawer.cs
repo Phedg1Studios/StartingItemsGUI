@@ -270,52 +270,51 @@ namespace Phedg1Studios {
             }
 
             static void DrawShop() {
-                List<int> storeItems = GetStoreItems();
+                var storeItems = GetStoreItems();
                 shopInterfaces.Add(ScrollCreator.CreateScroll(rootTransform, UIConfig.storeRows[Data.mode], UIConfig.textCount[Data.mode], storeItems, rootTransform.rect.width - UIConfig.offsetHorizontal * 2, new Vector3(UIConfig.offsetHorizontal, -UIConfig.offsetVertical - UIConfig.blueButtonHeight - UIConfig.spacingVertical, 0), itemImages, itemTexts));
             }
 
             static public List<int> GetStoreItems() {
-                List<int> storeItems = new List<int>();
-                foreach (ItemIndex itemIndex in RoR2.ItemCatalog.tier1ItemList) {
-                    if (Data.UnlockedItem(Data.allItemsIndexes[itemIndex])) {
-                        storeItems.Add(Data.allItemsIndexes[itemIndex]);
+                var allItemLists = new List<List<ItemIndex>>
+                {
+                    RoR2.ItemCatalog.tier1ItemList,
+                    RoR2.ItemCatalog.tier2ItemList,
+                    RoR2.ItemCatalog.tier3ItemList,
+                    Data.bossItems,
+                    RoR2.ItemCatalog.lunarItemList
+                };
+
+                var allEquipmentLists = new List<List<EquipmentIndex>>
+                {
+                    RoR2.EquipmentCatalog.equipmentList,
+                    Data.lunarEquipment,
+                    Data.eliteEquipment
+                };
+
+                var storeItems = new List<int>();
+
+                foreach (var itemList in allItemLists)
+                {
+                    foreach (var item in itemList)
+                    {
+                        if (Data.UnlockedItem((int)item) && !storeItems.Contains((int)item))
+                        {
+                            storeItems.Add((int)item);
+                        }
                     }
                 }
-                foreach (ItemIndex itemIndex in RoR2.ItemCatalog.tier2ItemList) {
-                    if (Data.UnlockedItem(Data.allItemsIndexes[itemIndex])) {
-                        storeItems.Add(Data.allItemsIndexes[itemIndex]);
+
+                foreach (var equipmentList in allEquipmentLists)
+                {
+                    foreach (var equipment in equipmentList)
+                    {
+                        if (Data.UnlockedItem((int)equipment) && !storeItems.Contains((int)equipment))
+                        {
+                           storeItems.Add((int)equipment);
+                        }
                     }
                 }
-                foreach (ItemIndex itemIndex in RoR2.ItemCatalog.tier3ItemList) {
-                    if (Data.UnlockedItem(Data.allItemsIndexes[itemIndex])) {
-                        storeItems.Add(Data.allItemsIndexes[itemIndex]);
-                    }
-                }
-                foreach (ItemIndex itemIndex in Data.bossItems) {
-                    if (Data.UnlockedItem(Data.allItemsIndexes[itemIndex])) {
-                        storeItems.Add(Data.allItemsIndexes[itemIndex]);
-                    }
-                }
-                foreach (ItemIndex itemIndex in RoR2.ItemCatalog.lunarItemList) {
-                    if (Data.UnlockedItem(Data.allItemsIndexes[itemIndex])) {
-                        storeItems.Add(Data.allItemsIndexes[itemIndex]);
-                    }
-                }
-                foreach (EquipmentIndex equipmentIndex in RoR2.EquipmentCatalog.equipmentList) {
-                    if (Data.UnlockedItem(Data.allEquipmentIndexes[equipmentIndex]) && !Data.lunarEquipment.Contains(equipmentIndex)) {
-                        storeItems.Add(Data.allEquipmentIndexes[equipmentIndex]);
-                    }
-                }
-                foreach (EquipmentIndex equipmentIndex in Data.lunarEquipment) {
-                    if (Data.UnlockedItem(Data.allEquipmentIndexes[equipmentIndex])) {
-                        storeItems.Add(Data.allEquipmentIndexes[equipmentIndex]);
-                    }
-                }
-                foreach (EquipmentIndex equipmentIndex in Data.eliteEquipment) {
-                    if (Data.UnlockedItem(Data.allEquipmentIndexes[equipmentIndex])) {
-                        storeItems.Add(Data.allEquipmentIndexes[equipmentIndex]);
-                    }
-                }
+
                 return storeItems;
             }
 

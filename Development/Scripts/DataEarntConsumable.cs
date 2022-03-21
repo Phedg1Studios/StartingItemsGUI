@@ -153,13 +153,13 @@ namespace Phedg1Studios {
             static public void UpdateUserPointsStages(Run run, RunReport runReport) {
                 if (Data.earningMethod == 0 || Data.earningMethod == 2) {
                     float pointsMultiplier = 1;
-                    if (runReport.gameEnding.gameEndingIndex == RoR2.RoR2Content.GameEndings.mainEnding.gameEndingIndex) {
+                    if (runReport.gameEnding.gameEndingIndex == RoR2.RoR2Content.GameEndings.MainEnding.gameEndingIndex) {
                         pointsMultiplier = pointsMultiplier * winMultiplier;
-                    } else if (runReport.gameEnding.gameEndingIndex == RoR2.RoR2Content.GameEndings.standardLoss.gameEndingIndex) {
+                    } else if (runReport.gameEnding.gameEndingIndex == RoR2.RoR2Content.GameEndings.StandardLoss.gameEndingIndex) {
                         pointsMultiplier = pointsMultiplier * lossMutliplier;
-                    } else if (runReport.gameEnding.gameEndingIndex == RoR2.RoR2Content.GameEndings.obliterationEnding.gameEndingIndex) {
+                    } else if (runReport.gameEnding.gameEndingIndex == RoR2.RoR2Content.GameEndings.ObliterationEnding.gameEndingIndex) {
                         pointsMultiplier = pointsMultiplier * obliterateMultiplier;
-                    } else if (runReport.gameEnding.gameEndingIndex == RoR2.RoR2Content.GameEndings.limboEnding.gameEndingIndex) {
+                    } else if (runReport.gameEnding.gameEndingIndex == RoR2.RoR2Content.GameEndings.LimboEnding.gameEndingIndex) {
                         pointsMultiplier = pointsMultiplier * limboMultiplier;
                     }
                     pointsMultiplier = pointsMultiplier * GetDifficultyMultiplier(run);

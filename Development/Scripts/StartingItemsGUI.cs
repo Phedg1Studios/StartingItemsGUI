@@ -24,7 +24,6 @@ namespace Phedg1Studios {
                 Data.UpdateConfigLocations();
                 gameObject.AddComponent<Util>();
                 Resources.LoadResources();
-                Data.PopulateItemCatalogues();
                 SceneLoadSetup();
                 R2API.Networking.NetworkingAPI.RegisterMessageType<Connection>();
                 R2API.Networking.NetworkingAPI.RegisterMessageType<ItemPurchased>();
@@ -40,18 +39,19 @@ namespace Phedg1Studios {
             void Start() {
                 startingItemsGUI = this;
                 OnceSetup();
-                On.RoR2.PreGameController.OnEnable += ((orig, preGameController) => {
+                On.RoR2.PreGameController.OnEnable += (orig, preGameController) => {
                     Data.localUsers.Clear();
                     Data.SetForcedMode(-1);
                     GameManager.ClearItems();
                     orig(preGameController);
-                });
+                };
                 UnityEngine.SceneManagement.SceneManager.sceneLoaded += (scene, mode) => {
                     if (scene.name == "title") {
                         Data.localUsers.Clear();
                         Data.SetForcedMode(-1);
                         GameManager.ClearItems();
                         SceneLoadSetup();
+                        Data.PopulateItemCatalogues();
                     }
                 };
                 RoR2.Run.onRunStartGlobal += (run) => {
@@ -63,7 +63,7 @@ namespace Phedg1Studios {
                         }
                     }
                     characterMasterCoroutines.Clear();
-                    if (NetworkServer.active) {
+                    if (UnityEngine.Networking.NetworkServer.active) {
                         foreach (NetworkUser networkUser in RoR2.NetworkUser.readOnlyInstancesList) {
                             GameManager.status.Add(networkUser.netId.Value, new List<bool>() { false, false, false });
                             GameManager.items.Add(networkUser.netId.Value, new Dictionary<int, int>());

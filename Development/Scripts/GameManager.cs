@@ -121,7 +121,8 @@ namespace Phedg1Studios {
                 }
             }
 
-            static public void SpawnItems(uint connectionID) {
+            static public void SpawnItems(uint connectionID)
+            {
                 if (status[connectionID][0] && status[connectionID][1]) {
                     if (!status[connectionID][2]) {
                         status[connectionID][2] = true;
@@ -132,9 +133,9 @@ namespace Phedg1Studios {
                 }
             }
 
-            static IEnumerator<int> SpawnItemsCoroutine(uint connectionID) {
-                while(characterMasters[connectionID].GetBody() == null) {
-                    yield return 0;
+            static System.Collections.IEnumerator SpawnItemsCoroutine(uint connectionID) {
+                if (characterMasters[connectionID].GetBody() == null) {
+                    yield return new UnityEngine.WaitUntil(() => characterMasters[connectionID].GetBody() != null);
                 }
 
                 foreach (int itemID in items[connectionID].Keys) {
@@ -149,20 +150,23 @@ namespace Phedg1Studios {
                     bool pickupCreated = false;
                     if (Data.allItemIDs.ContainsKey(itemID)) {
                         pickupCreated = true;
-                        pickupIndex = new PickupIndex(Data.allItemIDs[itemID]);
-                    } else if (Data.allEquipmentIDs.ContainsKey(itemID)) {
-                        pickupCreated = true;
-                        pickupIndex = new PickupIndex(Data.allEquipmentIDs[itemID]);
+                        pickupIndex = PickupCatalog.FindPickupIndex(Data.allItemIDs[itemID]);
                     }
-                    if (pickupCreated) {
-                        Chat.AddPickupMessage(characterMasters[connectionID].GetBody(), pickupIndex.GetPickupNameToken(), pickupIndex.GetPickupColor(), System.Convert.ToUInt32(items[connectionID][itemID]));
+                    else if (Data.allEquipmentIDs.ContainsKey(itemID))
+                    {
+                        pickupCreated = true;
+                        pickupIndex = PickupCatalog.FindPickupIndex(Data.allEquipmentIDs[itemID]);
+                    }
+
+                    if (pickupCreated)
+                    {
+                        Chat.AddPickupMessage(characterMasters[connectionID].GetBody(), PickupCatalog.GetPickupDef(pickupIndex).nameToken, PickupCatalog.GetPickupDef(pickupIndex).baseColor, System.Convert.ToUInt32(items[connectionID][itemID]));
                     }
                 }
                 if (Data.mode == DataEarntConsumable.mode) {
                     Connection connection = new Connection { _connectionID = connectionID };
                     connection.Send(R2API.Networking.NetworkDestination.Clients);
                 }
-                yield return 0;
             }
 
             static public void FinalizePurchases(Connection connection) {
